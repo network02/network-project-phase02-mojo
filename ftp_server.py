@@ -6,6 +6,10 @@ import threading
 import os
 import re
 
+users = {
+    "mamad": ["mamad", 1],
+    "ali": ["ali", 4]
+}
 BASE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/data"
 if not os.path.exists(BASE_DIR):
     os.makedirs(BASE_DIR)
@@ -81,6 +85,17 @@ def handle_command(command, current_dir):
 
     if not validate_command(command):
         return f"Command '{command}' not supported"
+    
+    # Action for command
+    if command.upper().startswith("USER"):
+        username = command.split(' ')[1]
+
+        if username in users:   # User Database: "username": "password", "access_level"
+            current_user = username
+            return "User login successful"
+        else:
+            return "Invalid username"
+
 
 def handle_client(conn, addr):
     current_dir = BASE_DIR
