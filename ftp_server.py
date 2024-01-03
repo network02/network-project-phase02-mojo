@@ -110,6 +110,18 @@ def handle_command(command, current_dir):
         else:
             current_user = None
             return "Invalid password"
+    
+    elif command.upper().starswith("LIST"):
+        directory = BASE_DIR + command.split(' ')[1]
+        try:
+            listing = os.listdir(directory)
+
+            listing_string = "\n".join(listing)
+
+            return listing_string.encode()
+        except OSError as e:
+            print(f"Error retrieving directory listing: {e}")
+            return f"Error retrieving directory listing"
 
 def handle_client(conn, addr):
     current_dir = BASE_DIR
