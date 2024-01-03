@@ -5,6 +5,7 @@ import socket
 import threading
 import os
 import re
+import random
 
 users = {
     "mamad": {
@@ -16,10 +17,15 @@ users = {
         "access_level": 4
     }
 }
+DATA_PORTS = {}
+PORT_RANGE = (50000, 60000)
+for port in range(*PORT_RANGE):
+    DATA_PORTS[port] = False
 BASE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/data"
 if not os.path.exists(BASE_DIR):
     os.makedirs(BASE_DIR)
     print(f"Directory '{BASE_DIR}' created successfully.")
+HEADERSIZE = 1024
 
 
 def is_valid_string(text, pattern):
@@ -78,7 +84,7 @@ def validate_command(command):
     return is_valid_string(command.upper(), pattern)
 
 
-def handle_command(command, current_dir):
+def handle_command(command, current_dir, control_channel):
     """
     Handles an FTP command based on its format and performs basic actions.
 
@@ -122,6 +128,61 @@ def handle_command(command, current_dir):
         except OSError as e:
             print(f"Error retrieving directory listing: {e}")
             return f"Error retrieving directory listing"
+    
+    elif command.upper().starswith("RETR"):
+        directory = BASE_DIR + command.split(' ')[1]
+        
+        try:
+            # Find a random port number for the data channel
+            with threading.Lock():
+                data_port = random.randint(*PORT_RANGE)
+                while DATA_PORTS[data_port] == False:
+                    data_port = random.randint(*PORT_RANGE)
+                data_port[data_port] = False
+
+            # Send the port number to the client over the control channel
+            file_size = os.path.getsize(file)
+            data_length = str(HEADERSIZE + file_size).encode()
+            control_channel.send(f"PORT {data_port}\r\n{data_length}\r\n".encode())
+
+            # Create the data socket and listen for the client's connection
+            data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            data_socket.bind(('localhost', data_port))
+            data_socket.listen(1)
+            data_channel, _ = data_socket.accept()
+
+            # Read the entire file into a buffer
+            with threading.Lock():
+                with open(file, 'rb') as file:
+                    data = file.read()
+
+            # Send the file data chunks to the client
+            sent_bytes = HEADERSIZE
+            while sent_bytes < file_size:
+                # Check if the data is larger than the socket buffer
+                if file_size - sent_bytes < 1024:
+                    # Send the remaining data
+                    data_chunk = data[sent_bytes:]
+                    data_channel.sendall(data_chunk)
+                else:
+                    # Send the data in chunks of 1024 bytes
+                    data_chunk = data[sent_bytes:sent_bytes + 1024]
+                    data_channel.sendall(data_chunk)
+                    sent_bytes += 1024
+
+            # Close the data channel
+            data_socket.close()
+            data_channel.close()
+
+            # Send control messages to the client
+            control_channel.send("226 Transfer complete\r\n".encode())
+        
+        except FileNotFoundError:
+            control_channel.send("450 Requested file action not taken. File unavailable\r\n".encode())
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            control_channel.send("451 Requested action aborted. Local error in processing\r\n".encode())
 
 def handle_client(conn, addr):
     current_dir = BASE_DIR
@@ -132,7 +193,7 @@ def handle_client(conn, addr):
             if not command:
                 break
 
-            response = handle_command(command, current_dir)
+            response = handle_command(command, current_dir, conn)
             conn.sendall(response)
 
     except Exception as e:
