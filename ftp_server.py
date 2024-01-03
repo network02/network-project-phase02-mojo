@@ -7,8 +7,14 @@ import os
 import re
 
 users = {
-    "mamad": ["mamad", 1],
-    "ali": ["ali", 4]
+    "mamad": {
+        "password": "mamad",
+        "access_level": 1
+    },
+    "ali": {
+        "password": "ali",
+        "access_level": 4
+    }
 }
 BASE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/data"
 if not os.path.exists(BASE_DIR):
@@ -96,6 +102,14 @@ def handle_command(command, current_dir):
         else:
             return "Invalid username"
 
+    elif command.upper().starswith("PASS"):
+        password = command.split(' ')[1]
+
+        if current_user and users[current_user]["password"] == password:
+            return "Password accepted"
+        else:
+            current_user = None
+            return "Invalid password"
 
 def handle_client(conn, addr):
     current_dir = BASE_DIR
