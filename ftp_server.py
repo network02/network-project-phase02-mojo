@@ -113,10 +113,10 @@ def handle_command(command, current_dir, control_channel):
         password = command.split(' ')[1]
 
         if current_user and users[current_user]["password"] == password:
-            return "Password accepted"
+            return "200 Password accepted"
         else:
             current_user = None
-            return "Invalid password"
+            return "401 Invalid password"
     
     elif command.upper().starswith("LIST"):
         directory = BASE_DIR + command.split(' ')[1]
