@@ -295,7 +295,10 @@ def handle_client(conn, addr):
         while True:
             # Receive data from the client
             command = conn.recv(1024)
-            if not command:
+
+            if command.upper().starswith("QUIT"):
+                print(f'Client {addr} disconnected')
+                conn.close()
                 break
 
             response = handle_command(command, current_dir, conn)
