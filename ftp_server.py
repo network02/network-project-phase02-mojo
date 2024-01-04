@@ -95,30 +95,9 @@ def handle_command(command, current_dir, control_channel):
     Returns:
         A response message or None if the command is not supported.
     """
-
-    if not validate_command(command):
-        return f"Command '{command}' not supported"
     
     # Action for command
-    if command.upper().startswith("USER"):
-        username = command.split(' ')[1]
-
-        if username in users:   # User Database: "username": "password", "access_level"
-            current_user = username
-            return "200 User login successful"
-        else:
-            return "401 Invalid username"
-
-    elif command.upper().starswith("PASS"):
-        password = command.split(' ')[1]
-
-        if current_user and users[current_user]["password"] == password:
-            return "200 Password accepted"
-        else:
-            current_user = None
-            return "401 Invalid password"
-    
-    elif command.upper().starswith("LIST"):
+    if command.upper().startswith("LIST"):
         directory = BASE_DIR + command.split(' ')[1]
         try:
             listing = os.listdir(directory)
@@ -130,7 +109,7 @@ def handle_command(command, current_dir, control_channel):
             print(f"Error retrieving directory listing: {e}")
             return f"Error retrieving directory listing"
     
-    elif command.upper().starswith("RETR"):
+    elif command.upper().startswith("RETR"):
         directory = BASE_DIR + command.split(' ')[1]
         
         try:
@@ -188,7 +167,7 @@ def handle_command(command, current_dir, control_channel):
             print(f"An error occurred: {e}")
             control_channel.send("451 Requested action aborted. Local error in processing\r\n".encode())
         
-    elif command.upper().starswith("STOR"):
+    elif command.upper().startswith("STOR"):
         _, filename, file_size = BASE_DIR + command.split(' ')
 
                     # Find a random port number for the data channel
@@ -222,7 +201,7 @@ def handle_command(command, current_dir, control_channel):
         data_socket.close()
         data_channel.close()
 
-    elif command.upper().starswith("DELE"):
+    elif command.upper().startswith("DELE"):
         filename = BASE_DIR + command.split(' ')[1]
 
         # Check if allowed
@@ -237,7 +216,7 @@ def handle_command(command, current_dir, control_channel):
         
         control_channel.sendall(response.encode('utf-8'))
 
-    elif command.upper().starswith("MKD"):
+    elif command.upper().startswith("MKD"):
         directory = command.split(' ')[1]
 
         if not os.path.exists(directory): 
@@ -274,7 +253,7 @@ def handle_command(command, current_dir, control_channel):
 
         control_channel.sendall(response.encode('utf-8'))
 
-    elif command.upper().starswith("CDUP"):
+    elif command.upper().startswith("CDUP"):
         if current_dir == BASE_DIR:
             response = '550 Cannot change to parent directory of root directory\r\n'
         else:
@@ -291,18 +270,45 @@ def handle_command(command, current_dir, control_channel):
 
 def handle_client(conn, addr):
     current_dir = BASE_DIR
+    username = ""
+    password = ""
+    authenticated = False
     try:
         while True:
             # Receive data from the client
-            command = conn.recv(1024)
+            command = conn.recv(1024).decode()
 
-            if command.upper().startswith(b"QUIT"):
+            if not validate_command(command):
+                response = f"Command '{command}' not supported"
+                conn.sendall(response.encode())
+                continue
+
+            if command.upper().startswith("QUIT"):
                 print(f'Client {addr} disconnected')
                 conn.close()
                 break
+            elif command.upper().startswith("USER"):
+                username = command.split(' ')[1]
+
+                if username in users: # User Database: "username": "password", "access_level"
+                    response = "200 User login successful"
+                else:
+                    response = "401 Invalid username"
+                conn.sendall(response.encode())
+                continue
+            elif command.upper().startswith("PASS"):
+                password = command.split(' ')[1]
+
+                if username and users[username]["password"] == password:
+                    response = "200 Password accepted"
+                else:
+                    username = None
+                    response = "401 Invalid password"
+                conn.sendall(response.encode())
+                continue
 
             response = handle_command(command, current_dir, conn)
-            conn.sendall(response)
+            conn.sendall(response.encode())
 
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
