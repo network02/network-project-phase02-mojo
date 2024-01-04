@@ -21,7 +21,7 @@ users = {
 DATA_PORTS = {}
 PORT_RANGE = (50000, 60000)
 for port in range(*PORT_RANGE):
-    DATA_PORTS[port] = False
+    DATA_PORTS[port] = True
 BASE_DIR = os.path.dirname(os.path.realpath(__file__)) + "/data"
 if not os.path.exists(BASE_DIR):
     os.makedirs(BASE_DIR)
@@ -168,27 +168,36 @@ def handle_command(command, current_dir, control_channel):
             control_channel.send("451 Requested action aborted. Local error in processing\r\n".encode())
         
     elif command.upper().startswith("STOR"):
-        _, filename, file_size = BASE_DIR + command.split(' ')
+        print("ali")
+        print(command)
+        filename = BASE_DIR + str(command.split(' ')[1])
+        file_size = int(command.split(' ')[2])
+        print("shiiiit")
 
-                    # Find a random port number for the data channel
+        # Find a random port number for the data channel
         with threading.Lock():
+            print("lock")
             data_port = random.randint(*PORT_RANGE)
             while DATA_PORTS[data_port] == False:
                 data_port = random.randint(*PORT_RANGE)
-            data_port[data_port] = False    # Close the port
 
-        control_channel.send(f"PORT {data_port}\r\n".encode())
+            DATA_PORTS[data_port] = False    # Close the port
+
+        print("mamadooo")
+        print(data_port)
+        control_channel.send(f"PORT {data_port}".encode())
 
         # Create the data socket and listen for the client's connection
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         data_socket.bind(('localhost', data_port))
         data_socket.listen(1)
         data_channel, _ = data_socket.accept()
-
+        print("sard")
         with open(filename, 'wb') as file: # Open the file or create it
-
+            print("kii?")
             rcv_size = 0
             while True:
+                print(f'rcv_size:{rcv_size}')
                 data = data_channel.recv(1024)
                 
                 file.write(data)
@@ -197,7 +206,7 @@ def handle_command(command, current_dir, control_channel):
                 if rcv_size >= file_size:
                     control_channel.sendall('226 Transfer complete'.encode('utf-8'))
                     break
-        
+        print("sag")
         data_socket.close()
         data_channel.close()
 
@@ -282,6 +291,8 @@ def handle_client(conn, addr):
                 response = f"Command '{command}' not supported"
                 conn.sendall(response.encode())
                 continue
+        
+            print("mamad")
 
             if command.upper().startswith("QUIT"):
                 print(f'Client {addr} disconnected')
@@ -308,6 +319,7 @@ def handle_client(conn, addr):
                 continue
 
             if authenticated:
+                print("saeed")
                 response = handle_command(command, current_dir, conn)
             else:
                 response = "You must login first"

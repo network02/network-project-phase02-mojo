@@ -45,28 +45,36 @@ def main():
                 file_size = os.path.getsize(client_path)
                 client.sendall(f'STOR {server_path} {file_size}'.encode(FORMAT))
 
-                data_port = client.recv(SIZE).decode()
+                data_port = int(client.recv(SIZE).decode().split(' ')[1])
+                print(data_port)
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as data_channel:
                     data_channel.connect((IP, data_port))
 
                     with open(client_path, 'rb') as file:
-                        data = file.read()
+                        while True:
+                            data = file.read(SIZE)
+                            if not data:
+                                break
+
+                            data_channel.sendall(data)
                 
                     # Send the file data chunks to the server
-                    sent_bytes = SIZE
-                    while sent_bytes < file_size:
+                #    sent_bytes = SIZE
+                #    while sent_bytes < file_size:
                         # Check if the data is larger than the socket buffer
-                        if file_size - sent_bytes < SIZE:
+                #        if file_size - sent_bytes <= SIZE:
                             # Send the remaining data
-                            data_chunk = data[sent_bytes:]
-                            data_channel.sendall(data_chunk)
-                        else:
+                #            data_chunk = data[sent_bytes:]
+                #            data_channel.sendall(data_chunk)
+                #            break
+                #        else:
                             # Send the data in chunks of SIZE bytes
-                            data_chunk = data[sent_bytes + SIZE]
-                            data_channel.sendall(data_chunk)
-                            sent_bytes += SIZE
-                    
+                #            data_chunk = data[sent_bytes + SIZE]
+                #            data_channel.sendall(data_chunk)
+                #            sent_bytes += SIZE
+                print("HAHA")
                 server_response = client.recv(SIZE).decode()
+                print("shooot")
                 print(server_response)
             elif "RETR" in command:
                 ...
