@@ -36,6 +36,20 @@ def main():
         while True:
             command = input("Enter your command: ")
 
+            if "STOR" in command:
+                ...
+            elif "RETR" in command:
+                ...
+            elif "DELE" in command:
+                ...
+            elif "QUIT" in command:
+                ...
+            else:
+                client.send(command.encode(FORMAT))
+
+                server_response = client.recv(SIZE).decode()
+                print(server_response)
+
 
 if __name__ == "__main__":
     main()
