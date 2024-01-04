@@ -221,6 +221,29 @@ def handle_command(command, current_dir, control_channel):
         data_socket.close()
         data_channel.close()
 
+    elif command.upper().starswith("DELE"):
+        filename = BASE_DIR + command.split(' ')[1]
+
+        # Check if allowed
+
+        try:
+            os.remove(filename)
+            response = '250 File deleted successfully\r\n'
+        except FileNotFoundError:
+            response = '550 File not found\r\n'
+        except:
+            response = '550 Invalid file name\r\n'
+        
+        control_channel.sendall(response.encode('utf-8'))
+
+    elif command.upper().starswith("MKD"):
+        directory = command.split(' ')[1]
+
+        if not os.path.exists(directory): 
+            os.makedirs(directory)
+            response = f"Directory '{directory}' created successfully."
+        else: 
+            response = f"Directory '{directory}' already exists"
 
 def handle_client(conn, addr):
     current_dir = BASE_DIR
