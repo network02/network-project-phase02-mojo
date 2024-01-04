@@ -6,6 +6,7 @@ import threading
 import os
 import re
 import random
+import shutil
 
 users = {
     "mamad": {
@@ -244,6 +245,23 @@ def handle_command(command, current_dir, control_channel):
             response = f"Directory '{directory}' created successfully."
         else: 
             response = f"Directory '{directory}' already exists"
+
+        control_channel.sendall(response.encode('utf-8'))
+        
+    elif command.upper().startswith("RMD"):
+        directory = command.split(' ')[1]
+
+        if not os.path.isdir(directory):
+            control_channel.sendall("550 Directory does not exist\r\n")
+            return
+
+        try:
+            shutil.rmtree(directory)
+            response = '250 Directory successfully removed\r\n'
+        except OSError:
+            response = '550 Directory does not exist\r\n'
+
+        control_channel.sendall(response.encode('utf-8'))
 
 def handle_client(conn, addr):
     current_dir = BASE_DIR
