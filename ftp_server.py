@@ -301,13 +301,16 @@ def handle_client(conn, addr):
 
                 if username and users[username]["password"] == password:
                     response = "200 Password accepted"
+                    authenticated = True
                 else:
-                    username = None
                     response = "401 Invalid password"
                 conn.sendall(response.encode())
                 continue
 
-            response = handle_command(command, current_dir, conn)
+            if authenticated:
+                response = handle_command(command, current_dir, conn)
+            else:
+                response = "You must login first"
             conn.sendall(response.encode())
 
     except Exception as e:
