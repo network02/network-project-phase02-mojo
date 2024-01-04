@@ -138,7 +138,7 @@ def handle_command(command, current_dir, control_channel):
                 data_port = random.randint(*PORT_RANGE)
                 while DATA_PORTS[data_port] == False:
                     data_port = random.randint(*PORT_RANGE)
-                data_port[data_port] = False
+                data_port[data_port] = False    # Close the port
 
             # Send the port number to the client over the control channel
             file_size = os.path.getsize(file)
@@ -173,6 +173,9 @@ def handle_command(command, current_dir, control_channel):
             # Close the data channel
             data_socket.close()
             data_channel.close()
+
+            with threading.Lock():
+                data_port[data_port] = True # Open the port
 
             # Send control messages to the client
             control_channel.send("226 Transfer complete\r\n".encode())
