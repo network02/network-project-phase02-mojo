@@ -2,7 +2,7 @@ import socket
 import os
 
 IP = 'localhost'
-PORT = 21
+PORT = 2100
 ADDR = (IP, PORT)
 FORMAT = "utf-8"
 SIZE = 1024
@@ -12,12 +12,13 @@ def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
         """ Connecting to the server. """
         client.connect(ADDR)
-        response = client.recv(SIZE).decode()
-
-        username = input("Enter your Username: ")
-        client.sendall(f"USER {username}\r\n".encode())
         server_response = client.recv(SIZE).decode()
-
+        print(server_response)
+        
+        username = input("Enter your Username: ")
+        client.sendall(f"USER {username}".encode())
+        server_response = client.recv(SIZE).decode()
+        
         print(server_response)
         # Check if Username was not valid.
         if not server_response.startswith("200"):
@@ -25,12 +26,13 @@ def main():
             main()
  
         password = input("Enter your Password: ")
-        client.sendall(f"PASS {password}\r\n".encode())
+        client.sendall(f"PASS {password}".encode())
         server_response = client.recv(SIZE).decode()
 
         print(server_response)
         # Check if Password was not valid.
         if not server_response.startswith("200"):
+            print("shit")
             client.close()
             main()
 
@@ -70,8 +72,9 @@ def main():
                 ...
             elif "DELE" in command:
                 ...
-            elif "QUIT" in command:
-                ...
+            elif command.upper().startswith("QUIT"):
+                client.close()
+                break
             else:
                 client.send(command.encode(FORMAT))
 
