@@ -13,6 +13,26 @@ def main():
         client.connect(ADDR)
         response = client.recv(SIZE).decode()
 
+        username = input("Enter your Username: ")
+        client.sendall(f"USER {username}\r\n".encode())
+        server_response = client.recv(SIZE).decode()
+
+        print(server_response)
+        # Check if Username was not valid.
+        if not server_response.startswith("200"):
+            client.close()
+            main()
+ 
+        password = input("Enter your Password: ")
+        client.sendall(f"PASS {password}\r\n".encode())
+        server_response = client.recv(SIZE).decode()
+
+        print(server_response)
+        # Check if Password was not valid.
+        if not server_response.startswith("200"):
+            client.close()
+            main()
+
         while True:
             command = input("Enter your command: ")
 
