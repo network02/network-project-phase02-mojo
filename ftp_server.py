@@ -263,6 +263,17 @@ def handle_command(command, current_dir, control_channel):
 
         control_channel.sendall(response.encode('utf-8'))
 
+    elif command.upper().startswith("CWD"):
+        directory = command.split(' ')[1]
+
+        # check the directory
+        # response = 'Invalid directory'
+
+        current_dir = directory
+        response = f"Current directory changed to '{directory}'"
+
+        control_channel.sendall(response.encode('utf-8'))
+
 def handle_client(conn, addr):
     current_dir = BASE_DIR
     try:
