@@ -1,4 +1,5 @@
 import socket
+import os
 
 IP = 'localhost'
 PORT = 21
@@ -37,7 +38,34 @@ def main():
             command = input("Enter your command: ")
 
             if "STOR" in command:
-                ...
+                _, client_path, server_path = command.split(' ')
+
+                file_size = os.path.getsize(client_path)
+                client.sendall(f'STOR {server_path} {file_size}'.encode(FORMAT))
+
+                data_port = client.recv(SIZE).decode()
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as data_channel:
+                    data_channel.connect((IP, data_port))
+
+                    with open(client_path, 'rb') as file:
+                        data = file.read()
+                
+                    # Send the file data chunks to the server
+                    sent_bytes = SIZE
+                    while sent_bytes < file_size:
+                        # Check if the data is larger than the socket buffer
+                        if file_size - sent_bytes < SIZE:
+                            # Send the remaining data
+                            data_chunk = data[sent_bytes:]
+                            data_channel.sendall(data_chunk)
+                        else:
+                            # Send the data in chunks of SIZE bytes
+                            data_chunk = data[sent_bytes + SIZE]
+                            data_channel.sendall(data_chunk)
+                            sent_bytes += SIZE
+                    
+                server_response = client.recv(SIZE).decode()
+                print(server_response)
             elif "RETR" in command:
                 ...
             elif "DELE" in command:
