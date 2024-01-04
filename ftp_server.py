@@ -105,9 +105,9 @@ def handle_command(command, current_dir, control_channel):
 
         if username in users:   # User Database: "username": "password", "access_level"
             current_user = username
-            return "User login successful"
+            return "200 User login successful"
         else:
-            return "Invalid username"
+            return "401 Invalid username"
 
     elif command.upper().starswith("PASS"):
         password = command.split(' ')[1]
