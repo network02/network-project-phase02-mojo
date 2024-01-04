@@ -186,6 +186,41 @@ def handle_command(command, current_dir, control_channel):
         except Exception as e:
             print(f"An error occurred: {e}")
             control_channel.send("451 Requested action aborted. Local error in processing\r\n".encode())
+        
+    elif command.upper().starswith("STOR"):
+        _, filename, file_size = BASE_DIR + command.split(' ')
+
+                    # Find a random port number for the data channel
+        with threading.Lock():
+            data_port = random.randint(*PORT_RANGE)
+            while DATA_PORTS[data_port] == False:
+                data_port = random.randint(*PORT_RANGE)
+            data_port[data_port] = False    # Close the port
+
+        control_channel.send(f"PORT {data_port}\r\n".encode())
+
+        # Create the data socket and listen for the client's connection
+        data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        data_socket.bind(('localhost', data_port))
+        data_socket.listen(1)
+        data_channel, _ = data_socket.accept()
+
+        with open(filename, 'wb') as file: # Open the file or create it
+
+            rcv_size = 0
+            while True:
+                data = data_channel.recv(1024)
+                
+                file.write(data)
+                rcv_size += len(data)
+
+                if rcv_size >= file_size:
+                    control_channel.sendall('226 Transfer complete'.encode('utf-8'))
+                    break
+        
+        data_socket.close()
+        data_channel.close()
+
 
 def handle_client(conn, addr):
     current_dir = BASE_DIR
