@@ -296,7 +296,7 @@ def handle_client(conn, addr):
             # Receive data from the client
             command = conn.recv(1024)
 
-            if command.upper().starswith("QUIT"):
+            if command.upper().startswith(b"QUIT"):
                 print(f'Client {addr} disconnected')
                 conn.close()
                 break
@@ -323,6 +323,7 @@ def main():
 
         while True:
             conn, addr = s.accept()
+            conn.sendall("Connected.".encode())
             print("Connected by", addr)
 
             # Create a new thread for each client connection
