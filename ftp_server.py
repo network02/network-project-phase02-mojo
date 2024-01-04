@@ -274,6 +274,21 @@ def handle_command(command, current_dir, control_channel):
 
         control_channel.sendall(response.encode('utf-8'))
 
+    elif command.upper().starswith("CDUP"):
+        if current_dir == BASE_DIR:
+            response = '550 Cannot change to parent directory of root directory\r\n'
+        else:
+            parent_dir = os.path.dirname(current_dir)
+            current_dir = parent_dir
+            response = '250 Directory successfully changed\r\n'
+        
+        control_channel.sendall(response.encode('utf-8'))
+    
+    else:
+        response = 'Command Invalid.'
+
+        control_channel.sendall(response.encode('utf-8'))
+
 def handle_client(conn, addr):
     current_dir = BASE_DIR
     try:
