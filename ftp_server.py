@@ -420,21 +420,47 @@ def handle_client(conn, addr):
 def main():
     HOST = 'localhost'
     PORT = 2100
+    # Create the users table if it doesn't exist
+    db = sqlite3.connect('ftp_users.db')
+    cursor = db.cursor()
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((HOST, PORT))
-        s.listen()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            access_level INTEGER NOT NULL    
+        )
+    ''')
 
-        print("Server listening on port", PORT)
+    db.commit()
+    db.close()
 
-        while True:
-            conn, addr = s.accept()
-            conn.sendall("Connected.".encode())
-            print("Connected by", addr)
+    print("--- --- --- --- ---")
+    print("-1- Start the server.")
+    print("-2- Manage Users.")
+    print("-3- EXIT.")
+    choice = input("-Enter Your Choice: ")
+    print("--- --- --- --- ---")
 
-            # Create a new thread for each client connection
-            client_thread = threading.Thread(target=handle_client, args=(conn, addr))
-            client_thread.start()
+    if choice == '1':
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind((HOST, PORT))
+            s.listen()
+
+            print("Server listening on port", PORT)
+
+            while True:
+                conn, addr = s.accept()
+                conn.sendall("Connected.".encode())
+                print("Connected by", addr)
+
+                # Create a new thread for each client connection
+                client_thread = threading.Thread(target=handle_client, args=(conn, addr))
+                client_thread.start()
+    elif choice == '2':
+        ...
+
 
 if __name__ == "__main__":
     main()
