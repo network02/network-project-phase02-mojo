@@ -291,15 +291,16 @@ def handle_command(command, current_dir, control_channel):
         return response
 
     elif command.upper().startswith("CDUP"):
+        print(f"Start of CDUP command: {command}")
+
         if current_dir == BASE_DIR:
-            response = '550 Cannot change to parent directory of root directory\r\n'
+            response = '550 Cannot change to parent directory of root directory'
         else:
+            print("niggaz")
             parent_dir = os.path.dirname(current_dir)
+            print("niggaz")
             current_dir = parent_dir
-            response = '250 Directory successfully changed\r\n'
-        
-        control_channel.sendall(response.encode('utf-8'))
-    
+            response = '250 Directory successfully changed'    
     else:
         response = 'Command Invalid.'
 
@@ -357,6 +358,20 @@ def handle_client(conn, addr):
                     current_dir = directory
                     print(f'current_dir: {current_dir}')
                     response = f"Current directory changed to '{command.split(' ')[1]}'"
+
+                conn.sendall(response.encode())
+                continue
+            elif command.upper().startswith("CDUP"):
+                print(f"Start of CDUP command: {command}")
+
+                if current_dir == BASE_DIR:
+                    response = '550 Cannot change to parent directory of root directory'
+                else:
+                    print("niggaz")
+                    parent_dir = os.path.dirname(current_dir)
+                    print("niggaz")
+                    current_dir = parent_dir
+                    response = '250 Directory successfully changed'
 
                 conn.sendall(response.encode())
                 continue
