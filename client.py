@@ -81,6 +81,10 @@ def main():
             elif "DELE" in command:
                 ...
             elif command.upper().startswith("QUIT"):
+                client.send(command.encode(FORMAT))
+
+                server_response = client.recv(SIZE).decode()
+                print(server_response)
                 client.close()
                 break
             else:
