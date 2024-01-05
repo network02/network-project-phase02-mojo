@@ -89,6 +89,8 @@ def validate_command(command):
         pattern = r"^CDUP$"  # No arguments expected
     elif command.upper().startswith("QUIT"):
         pattern = r"^QUIT$"  # No arguments expected
+    elif command.upper().startswith("REPORT"):
+        pattern = r"^REPORT$"  # No arguments expected
     else:
         return False
 
@@ -322,6 +324,7 @@ def handle_command(command, current_dir, control_channel):
 
         return response
 
+
 def handle_client(conn, addr):
     current_dir = BASE_DIR
     username = ""
@@ -329,6 +332,10 @@ def handle_client(conn, addr):
     inp_password = ""
     access_level = 4
     authenticated = False
+
+    db = sqlite3.connect('ftp_users.db')
+    curs = db.cursor()
+
     try:
         while True:
             # Receive data from the client
@@ -345,7 +352,6 @@ def handle_client(conn, addr):
                 conn.sendall("You may disconnect.".encode())
                 break
             elif command.upper().startswith("USER"):
-                db = sqlite3.connect('ftp_users.db')
                 cursor = db.cursor()
 
                 username = command.split(' ')[1]
@@ -353,7 +359,6 @@ def handle_client(conn, addr):
                 cursor.execute('SELECT username, password, access_level FROM users WHERE username = ?', (username,))
                 existing_user = cursor.fetchone()
 
-                db.close()
 
                 if existing_user:
                     username, password, access_level = existing_user
@@ -373,6 +378,9 @@ def handle_client(conn, addr):
                 conn.sendall(response.encode())
                 continue
             elif command.upper().startswith("CWD"):
+                curs.execute('INSERT INTO report (username, command) VALUES (?, ?)',
+                                 (username, command))
+                
                 print(f"Start of CWD command: {command}")
                 directory = manage_dir(command.split(' ')[1], current_dir)
                 print(f'directory: {directory}')
@@ -389,23 +397,38 @@ def handle_client(conn, addr):
                 conn.sendall(response.encode())
                 continue
             elif command.upper().startswith("CDUP"):
+                curs.execute('INSERT INTO report (username, command) VALUES (?, ?)',
+                                 (username, command))
+                
                 print(f"Start of CDUP command: {command}")
 
                 if current_dir == BASE_DIR:
                     response = '550 Cannot change to parent directory of root directory'
                 else:
-                    print("niggaz")
                     parent_dir = os.path.dirname(current_dir)
-                    print("niggaz")
                     current_dir = parent_dir
                     response = '250 Directory successfully changed'
 
                 conn.sendall(response.encode())
                 continue
+            elif command.upper().startswith("REPORT"):
+                curs.execute('INSERT INTO report (username, command) VALUES (?, ?)',
+                                 (username, command))
 
+                curs.execute('SELECT command FROM report WHERE username = ?', (username,))
+                commands = curs.fetchall()
+
+                response = '\n'.join(command[0] for command in commands)
+                
+                conn.sendall(response.encode())
+                continue
             if authenticated:
                 if access(command.split(' ')[0], access_level):
                     print("authenticated user gonna handle his command")
+                    curs.execute('INSERT INTO report (username, command) VALUES (?, ?)',
+                                 (username, command))
+
+                    db.commit()
                     response = handle_command(command, current_dir, conn)
                 else:
                     response = "550 Permission Denied"
@@ -418,6 +441,7 @@ def handle_client(conn, addr):
 
     finally:
         print("finally!")
+        db.close()
         conn.close()
 
 
@@ -434,6 +458,21 @@ def main():
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
             access_level INTEGER NOT NULL    
+        )
+    ''')
+
+    db.commit()
+    db.close()
+
+    # Create the report table if it doesn't exist
+    db = sqlite3.connect('ftp_users.db')
+    cursor = db.cursor()
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS report (
+            id INTEGER PRIMARY KEY,
+            username TEXT NOT NULL,
+            command TEXT NOT NULL
         )
     ''')
 
