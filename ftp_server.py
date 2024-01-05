@@ -482,7 +482,8 @@ def main():
     print("--- --- --- --- ---")
     print("-1- Start the server.")
     print("-2- Manage Users.")
-    print("-3- EXIT.")
+    print("-3- Report.")
+    print("-4- EXIT.")
     choice = input("--- Enter Your Choice: ")
     print("--- --- --- --- ---")
 
@@ -571,6 +572,18 @@ def main():
         
         db.commit()
         db.close()
+
+        main()
+    elif choice == '3':
+        db = sqlite3.connect('ftp_users.db')
+        cursor = db.cursor()
+
+        cursor.execute('SELECT command, username FROM report')
+        commands = cursor.fetchall()
+
+        db.close()
+
+        print('\n'.join(command[0]+','+command[1] for command in commands))
 
         main()
 
