@@ -96,7 +96,17 @@ def manage_dir(dir, current_dir):
     return current_dir + '/' + dir
 
 
-def handle_command(command, current_dir, control_channel):
+def access(command, user_al):
+    if command.upper() in ["STOR", "MKD"]:
+        if user_al > 2:
+            return False
+    elif command.upper() in ["DELE", "RMD"]:
+        if user_al > 1:
+            return False
+    return True
+
+
+def handle_command(command, current_dir, control_channel, user):
     """
     Handles an FTP command based on its format and performs basic actions.
 
@@ -377,8 +387,11 @@ def handle_client(conn, addr):
                 continue
 
             if authenticated:
-                print("authenticated user gonna handle his command")
-                response = handle_command(command, current_dir, conn)
+                if access(command.split(' ')[0], users[username]["access_level"]):
+                    print("authenticated user gonna handle his command")
+                    response = handle_command(command, current_dir, conn)
+                else:
+                    response = "550 Permission Denied"
             else:
                 response = "You must login first"
             conn.sendall(response.encode('utf-8'))
