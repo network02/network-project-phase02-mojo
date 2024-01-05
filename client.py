@@ -39,7 +39,7 @@ def main():
         while True:
             command = input("Enter your command: ")
 
-            if "STOR" in command:
+            if command.upper().startswith("STOR"):
                 _, client_path, server_path = command.split(' ')
 
                 file_size = os.path.getsize(client_path)
