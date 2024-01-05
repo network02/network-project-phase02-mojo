@@ -78,8 +78,13 @@ def main():
                 print(server_response)
             elif "RETR" in command:
                 ...
-            elif "DELE" in command:
-                ...
+            elif command.upper().startswith("DELE"):
+                choice = input("Do you really wish to delete y/n? ")
+                if choice == 'y' or choice == 'Y':
+                    client.send(command.encode(FORMAT))
+
+                    server_response = client.recv(SIZE).decode()
+                    print(server_response)
             elif command.upper().startswith("QUIT"):
                 client.send(command.encode(FORMAT))
 
