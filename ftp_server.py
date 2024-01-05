@@ -440,7 +440,7 @@ def main():
     print("-1- Start the server.")
     print("-2- Manage Users.")
     print("-3- EXIT.")
-    choice = input("-Enter Your Choice: ")
+    choice = input("--- Enter Your Choice: ")
     print("--- --- --- --- ---")
 
     if choice == '1':
@@ -459,8 +459,76 @@ def main():
                 client_thread = threading.Thread(target=handle_client, args=(conn, addr))
                 client_thread.start()
     elif choice == '2':
-        ...
+        print("-1- Add a user")
+        print("-2- Delete a user")
+        print("-3- User's profile")
+        choice = input("--- Enter Your Choice: ")
+        print("--- --- --- --- ---")
 
+        db = sqlite3.connect('ftp_users.db')
+        cursor = db.cursor()
+
+        if choice == '1':
+            username = input("Enter user's username: ")
+            password = input("Enter user's password: ")
+            access_level = int(input("Enter user's access_level [1, 2, 3, 4]: "))
+
+            hashed_password = bcrypt.using(salt_size=22).hash(password)
+            print(hashed_password)
+    
+            cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                print(f"User '{username}' already exists.")
+            else:
+                # Insert the new user into the database with the hashed password
+                cursor.execute('INSERT INTO users (username, password, access_level) VALUES (?, ?, ?)',(username, hashed_password, access_level))
+
+                print(f"User '{username}' registered with access level {access_level}.")
+        elif choice == '2':
+            username = input("Enter user's username: ")
+    
+            cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                # Delete the user from the database
+                cursor.execute('DELETE FROM users WHERE username = ?', (username,))
+                print(f"User '{username}' deleted from the database.")
+            else:
+                print(f"User '{username}' not found in the database.")
+        elif choice == '3':
+            username = input("Enter user's username: ")
+
+            # Check if the user exists
+            cursor.execute('SELECT username, access_level FROM users WHERE username = ?', (username,))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                username, access_level = existing_user
+                print(f'username: {username}')
+                print(f'access_level: {access_level}')
+
+                print("\n-1- Edit")
+                print("-2- To Continue")
+                choice = input("-Enter Your Choice: ")
+
+                if choice == '1':
+                    new_password = input("Enter user's password: ")
+                    new_access_level = int(input("Enter user's access_level [1, 2, 3, 4]: "))
+
+                    hashed_password = bcrypt.using(salt_size=22).hash(new_password)
+
+                    cursor.execute('UPDATE users SET password = ?, access_level = ? WHERE username = ?',(hashed_password, new_access_level, username))
+                    print(f"User '{username}' updated in the database.")
+            else:
+                print(f"User '{username}' not found in the database.")
+        
+        db.commit()
+        db.close()
+
+        main()
 
 if __name__ == "__main__":
     main()
