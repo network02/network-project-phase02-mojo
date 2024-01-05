@@ -110,7 +110,7 @@ def handle_command(command, current_dir, control_channel):
     # Action for command
     if command.upper().startswith("LIST"):
         print(f"Start of LIST command: {command}")
-
+        print(f'current_dir: {current_dir}')
         directory = manage_dir(command.split(' ')[1], current_dir)
         print(f'LIST directory: {directory}')
         try:
@@ -275,15 +275,20 @@ def handle_command(command, current_dir, control_channel):
         return response
 
     elif command.upper().startswith("CWD"):
-        directory = command.split(' ')[1]
+        print(f"Start of RMD command: {command}")
+        directory = manage_dir(command.split(' ')[1], current_dir)
+        print(f'directory: {directory}')
 
         # check the directory
-        # response = 'Invalid directory'
 
-        current_dir = directory
-        response = f"Current directory changed to '{directory}'"
+        if not os.path.isdir(directory):
+            response = "550 Directory does not exist"
+        else:
+            current_dir = directory
+            print(f'current_dir: {current_dir}')
+            response = f"Current directory changed to '{command.split(' ')[1]}'"
 
-        control_channel.sendall(response.encode('utf-8'))
+        return response
 
     elif command.upper().startswith("CDUP"):
         if current_dir == BASE_DIR:
@@ -337,6 +342,22 @@ def handle_client(conn, addr):
                     authenticated = True
                 else:
                     response = "401 Invalid password"
+                conn.sendall(response.encode())
+                continue
+            elif command.upper().startswith("CWD"):
+                print(f"Start of CWD command: {command}")
+                directory = manage_dir(command.split(' ')[1], current_dir)
+                print(f'directory: {directory}')
+
+                # check the directory
+
+                if not os.path.isdir(directory):
+                    response = "550 Directory does not exist"
+                else:
+                    current_dir = directory
+                    print(f'current_dir: {current_dir}')
+                    response = f"Current directory changed to '{command.split(' ')[1]}'"
+
                 conn.sendall(response.encode())
                 continue
 
