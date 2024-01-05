@@ -60,7 +60,11 @@ def validate_command(command):
     elif command.upper().startswith("PASS"):
         pattern = r"^PASS\s+(\w+)$"
     elif command.upper().startswith("LIST"):
-        pattern = r"^LIST\s+/(.+)$"
+        if len(command.split(' ')) < 3:
+            return True
+        else:
+            return False
+        #pattern = r"^LIST\s+/(.+)$"
     elif command.upper().startswith("RETR"):
         pattern = r"^RETR\s+(.+)$"  # Capture the filename
     elif command.upper().startswith("STOR"):
@@ -85,6 +89,15 @@ def validate_command(command):
     return is_valid_string(command.upper(), pattern)
 
 
+def manage_dir(dir, current_dir):
+    if dir.startswith('.'):
+        return current_dir + '/' + dir
+    elif dir.startswith('/'):
+        return current_dir + dir
+    else:
+        return dir
+
+
 def handle_command(command, current_dir, control_channel):
     """
     Handles an FTP command based on its format and performs basic actions.
@@ -98,13 +111,16 @@ def handle_command(command, current_dir, control_channel):
     
     # Action for command
     if command.upper().startswith("LIST"):
-        directory = BASE_DIR + command.split(' ')[1]
+        print(f"Start of LIST command: {command}")
+
+        directory = manage_dir(command.split(' ')[1], current_dir)
+        print(f'LIST directory: {directory}')
         try:
             listing = os.listdir(directory)
 
             listing_string = "\n".join(listing)
 
-            return listing_string.encode()
+            return listing_string
         except OSError as e:
             print(f"Error retrieving directory listing: {e}")
             return f"Error retrieving directory listing"
@@ -325,7 +341,6 @@ def handle_client(conn, addr):
             else:
                 response = "You must login first"
             conn.sendall(response.encode('utf-8'))
-            print("noice")
 
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
