@@ -554,6 +554,10 @@ def main():
                 print(f'username: {username}')
                 print(f'access_level: {access_level}')
 
+                cursor.execute('SELECT command FROM report WHERE username = ?', (username,))
+                commands = cursor.fetchall()
+                print('\n'.join(command[0] for command in commands))
+
                 print("\n-1- Edit")
                 print("-2- To Continue")
                 choice = input("-Enter Your Choice: ")
