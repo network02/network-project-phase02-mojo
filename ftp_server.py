@@ -7,6 +7,7 @@ import os
 import re
 import random
 import shutil
+import sqlite3
 
 users = {
     "mamad": {
@@ -106,7 +107,7 @@ def access(command, user_al):
     return True
 
 
-def handle_command(command, current_dir, control_channel, user):
+def handle_command(command, current_dir, control_channel):
     """
     Handles an FTP command based on its format and performs basic actions.
 
