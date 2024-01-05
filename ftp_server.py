@@ -90,12 +90,10 @@ def validate_command(command):
 
 
 def manage_dir(dir, current_dir):
-    if dir.startswith('.'):
-        return current_dir + '/' + dir
-    elif dir.startswith('/'):
-        return current_dir + dir
-    else:
+    if dir.startswith('/'):
         return dir
+
+    return current_dir + '/' + dir
 
 
 def handle_command(command, current_dir, control_channel):
@@ -120,7 +118,10 @@ def handle_command(command, current_dir, control_channel):
 
             listing_string = "\n".join(listing)
 
-            return listing_string
+            if listing_string:            
+                return listing_string
+            else:
+                return 'Directory is empty.'
         except OSError as e:
             print(f"Error retrieving directory listing: {e}")
             return f"Error retrieving directory listing"
@@ -229,19 +230,20 @@ def handle_command(command, current_dir, control_channel):
         return response
 
     elif command.upper().startswith("DELE"):
-        filename = BASE_DIR + command.split(' ')[1]
-
+        print(f"Start of DELE command: {command}")
+        filename = manage_dir(command.split(' ')[1], current_dir)
+        print(f'filename: {filename}')
         # Check if allowed
 
         try:
             os.remove(filename)
-            response = '250 File deleted successfully\r\n'
+            response = '250 File deleted successfully'
         except FileNotFoundError:
-            response = '550 File not found\r\n'
+            response = '550 File not found'
         except:
-            response = '550 Invalid file name\r\n'
+            response = '550 Invalid file name'
         
-        control_channel.sendall(response.encode('utf-8'))
+        return response
 
     elif command.upper().startswith("MKD"):
         directory = command.split(' ')[1]
