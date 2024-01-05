@@ -8,6 +8,7 @@ import re
 import random
 import shutil
 import sqlite3
+from passlib.hash import bcrypt
 
 users = {
     "mamad": {
@@ -321,6 +322,8 @@ def handle_client(conn, addr):
     current_dir = BASE_DIR
     username = ""
     password = ""
+    inp_password = ""
+    access_level = 4
     authenticated = False
     try:
         while True:
@@ -338,18 +341,27 @@ def handle_client(conn, addr):
                 conn.sendall("You may disconnect.".encode())
                 break
             elif command.upper().startswith("USER"):
+                db = sqlite3.connect('ftp_users.db')
+                cursor = db.cursor()
+
                 username = command.split(' ')[1]
 
-                if username in users: # User Database: "username": "password", "access_level"
+                cursor.execute('SELECT username, password, access_level FROM users WHERE username = ?', (username,))
+                existing_user = cursor.fetchone()
+
+                db.close()
+
+                if existing_user:
+                    username, password, access_level = existing_user
                     response = "200 User login successful"
                 else:
                     response = "401 Invalid username"
                 conn.sendall(response.encode())
                 continue
             elif command.upper().startswith("PASS"):
-                password = command.split(' ')[1]
+                inp_password = command.split(' ')[1]
 
-                if username and users[username]["password"] == password:
+                if username and password == inp_password:
                     response = "200 Password accepted"
                     authenticated = True
                 else:
@@ -388,7 +400,7 @@ def handle_client(conn, addr):
                 continue
 
             if authenticated:
-                if access(command.split(' ')[0], users[username]["access_level"]):
+                if access(command.split(' ')[0], access_level):
                     print("authenticated user gonna handle his command")
                     response = handle_command(command, current_dir, conn)
                 else:
