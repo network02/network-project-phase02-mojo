@@ -168,23 +168,22 @@ def handle_command(command, current_dir, control_channel):
             control_channel.send("451 Requested action aborted. Local error in processing\r\n".encode())
         
     elif command.upper().startswith("STOR"):
-        print("ali")
-        print(command)
+        print(f"start of STOR command: {command}")
         filename = BASE_DIR + str(command.split(' ')[1])
         file_size = int(command.split(' ')[2])
-        print("shiiiit")
+
+        response = ""
 
         # Find a random port number for the data channel
         with threading.Lock():
-            print("lock")
+            print("Findig an open data port.")
             data_port = random.randint(*PORT_RANGE)
             while DATA_PORTS[data_port] == False:
                 data_port = random.randint(*PORT_RANGE)
 
             DATA_PORTS[data_port] = False    # Close the port
 
-        print("mamadooo")
-        print(data_port)
+        print(f'data_port:{data_port}')
         control_channel.send(f"PORT {data_port}".encode())
 
         # Create the data socket and listen for the client's connection
@@ -192,23 +191,26 @@ def handle_command(command, current_dir, control_channel):
         data_socket.bind(('localhost', data_port))
         data_socket.listen(1)
         data_channel, _ = data_socket.accept()
-        print("sard")
+        print("STOR data_channel connected.")
         with open(filename, 'wb') as file: # Open the file or create it
-            print("kii?")
+            print("STOR file opened.")
             rcv_size = 0
+            print(f'file_size:{file_size}')
             while True:
-                print(f'rcv_size:{rcv_size}')
                 data = data_channel.recv(1024)
-                
+
                 file.write(data)
                 rcv_size += len(data)
+                print(f'rcv_size:{rcv_size}')
 
                 if rcv_size >= file_size:
-                    control_channel.sendall('226 Transfer complete'.encode('utf-8'))
+                    response = '226 Transfer complete'
                     break
-        print("sag")
+        print("STOR file recived. closing data_channel.")
         data_socket.close()
         data_channel.close()
+
+        return response
 
     elif command.upper().startswith("DELE"):
         filename = BASE_DIR + command.split(' ')[1]
@@ -286,17 +288,16 @@ def handle_client(conn, addr):
         while True:
             # Receive data from the client
             command = conn.recv(1024).decode()
+            print(command)
 
             if not validate_command(command):
                 response = f"Command '{command}' not supported"
                 conn.sendall(response.encode())
                 continue
-        
-            print("mamad")
 
             if command.upper().startswith("QUIT"):
                 print(f'Client {addr} disconnected')
-                conn.close()
+                conn.sendall("You may disconnect.".encode())
                 break
             elif command.upper().startswith("USER"):
                 username = command.split(' ')[1]
@@ -319,16 +320,18 @@ def handle_client(conn, addr):
                 continue
 
             if authenticated:
-                print("saeed")
+                print("authenticated user gonna handle his command")
                 response = handle_command(command, current_dir, conn)
             else:
                 response = "You must login first"
-            conn.sendall(response.encode())
+            conn.sendall(response.encode('utf-8'))
+            print("noice")
 
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
 
     finally:
+        print("finally!")
         conn.close()
 
 
