@@ -60,7 +60,11 @@ def validate_command(command):
     if command.upper().startswith("USER"):
         pattern = r"^USER\s+(\w+)$"
     elif command.upper().startswith("PASS"):
-        pattern = r"^PASS\s+(\w+)$"
+        if len(command.split(' ')) < 3:
+            return True
+        else:
+            return False
+        #pattern = r"^PASS\s+(\w+)$"
     elif command.upper().startswith("LIST"):
         if len(command.split(' ')) < 3:
             return True
@@ -474,7 +478,7 @@ def main():
             access_level = int(input("Enter user's access_level [1, 2, 3, 4]: "))
 
             hashed_password = bcrypt.using(salt_size=22).hash(password)
-            print(hashed_password)
+            hashed_password = password
     
             cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
             existing_user = cursor.fetchone()
@@ -519,6 +523,7 @@ def main():
                     new_access_level = int(input("Enter user's access_level [1, 2, 3, 4]: "))
 
                     hashed_password = bcrypt.using(salt_size=22).hash(new_password)
+                    hashed_password = new_password
 
                     cursor.execute('UPDATE users SET password = ?, access_level = ? WHERE username = ?',(hashed_password, new_access_level, username))
                     print(f"User '{username}' updated in the database.")
