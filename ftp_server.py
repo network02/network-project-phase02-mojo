@@ -246,15 +246,17 @@ def handle_command(command, current_dir, control_channel):
         return response
 
     elif command.upper().startswith("MKD"):
-        directory = command.split(' ')[1]
+        print(f"Start of MKD command: {command}")
+        directory = manage_dir(command.split(' ')[1], current_dir)
+        print(f'directory: {directory}')
 
         if not os.path.exists(directory): 
             os.makedirs(directory)
-            response = f"Directory '{directory}' created successfully."
+            response = f"Directory '{command.split(' ')[1]}' created successfully."
         else: 
-            response = f"Directory '{directory}' already exists"
+            response = f"Directory '{command.split(' ')[1]}' already exists"
 
-        control_channel.sendall(response.encode('utf-8'))
+        return response
         
     elif command.upper().startswith("RMD"):
         directory = command.split(' ')[1]
