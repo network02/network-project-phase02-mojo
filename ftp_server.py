@@ -259,19 +259,20 @@ def handle_command(command, current_dir, control_channel):
         return response
         
     elif command.upper().startswith("RMD"):
-        directory = command.split(' ')[1]
+        print(f"Start of RMD command: {command}")
+        directory = manage_dir(command.split(' ')[1], current_dir)
+        print(f'directory: {directory}')
 
         if not os.path.isdir(directory):
-            control_channel.sendall("550 Directory does not exist\r\n")
-            return
+            response = "550 Directory does not exist"
 
         try:
             shutil.rmtree(directory)
-            response = '250 Directory successfully removed\r\n'
+            response = '250 Directory successfully removed'
         except OSError:
-            response = '550 Directory does not exist\r\n'
+            response = '550 Directory does not exist'
 
-        control_channel.sendall(response.encode('utf-8'))
+        return response
 
     elif command.upper().startswith("CWD"):
         directory = command.split(' ')[1]
