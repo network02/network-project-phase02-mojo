@@ -295,7 +295,7 @@ def handle_command(command, current_dir, control_channel):
     else:
         response = 'Command Invalid.'
 
-        control_channel.sendall(response.encode('utf-8'))
+        return response
 
 def handle_client(conn, addr):
     current_dir = BASE_DIR
