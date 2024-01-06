@@ -76,8 +76,35 @@ def main():
                 server_response = client.recv(SIZE).decode()
                 print("shooot")
                 print(server_response)
-            elif "RETR" in command:
-                ...
+            if command.upper().startswith("RETR"):
+                client.send(command.encode(FORMAT))
+                filename = command.split(' ')[1].split('/')[-1]
+                filename = '/home/lash/Downloads/' + filename
+
+                server_response = client.recv(SIZE).decode()
+                print(server_response)
+                data_port = int(server_response.split(' ')[1])
+                file_size = int(server_response.split(' ')[2])
+                print(f'data_port: {data_port}, file_size:{file_size}')
+
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as data_channel:
+                    data_channel.connect((IP, data_port))
+
+                    with open(filename, 'wb') as file:
+                        rcv_size = 0
+
+                        while True:
+                            data = data_channel.recv(SIZE)
+
+                            file.write(data)
+                            rcv_size += len(data)
+
+                            if rcv_size >= file_size:
+                                break
+                
+                server_response = client.recv(SIZE).decode()
+                print("fletcher")
+                print(server_response)
             elif command.upper().startswith("DELE"):
                 choice = input("Do you really wish to delete y/n? ")
                 if choice == 'y' or choice == 'Y':
