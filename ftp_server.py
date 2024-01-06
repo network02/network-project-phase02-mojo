@@ -107,16 +107,19 @@ def validate_command(command):
 
     try:
         # 0 arg
-        if command.split(' ')[0] in ["LIST", "PWD", "CDUP", "QUIT"]:
+        if command.upper().split(' ')[0] in ["PWD", "CDUP", "QUIT"]:
             if len(command.split(' ')) != 1:
                 return False
         # 1 arg
-        elif command.split(' ')[0] in ["USER", "PASS", "DELE", "RETR", "MKD", "CWD"]:
+        elif command.upper().split(' ')[0] in ["USER", "PASS", "DELE", "RETR", "MKD", "CWD"]:
             if len(command.split(' ')) != 2:
                 return False
         # 2 arg
-        elif command in ["STOR"]:
+        elif command.upper().split(' ')[0] in ["STOR"]:
             if len(command.split(' ')) != 3:
+                return False
+        elif command.upper().split(' ')[0] == "LIST":
+            if len(command.split(' ')) > 2:
                 return False
         else:
             return False
@@ -130,7 +133,7 @@ def validate_command(command):
 
 def manage_dir(dir, current_dir):
     if dir.startswith('/'):
-        return dir
+        return BASE_DIR + dir
 
     return current_dir + '/' + dir
 
@@ -148,7 +151,12 @@ def access(command, user_al):
 def handle_list(command, current_dir):
     print(f"Start of LIST command: {command}")
     print(f'current_dir: {current_dir}')
-    directory = manage_dir(command.split(' ')[1], current_dir)
+
+    if len(command.split(' ')) > 1:
+        directory = manage_dir(command.split(' ')[1], current_dir)
+    else:
+        directory = current_dir
+
     print(f'LIST directory: {directory}')
     try:
         listing = os.listdir(directory)
