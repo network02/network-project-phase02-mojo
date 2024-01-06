@@ -383,6 +383,8 @@ def handle_client(conn, addr):
                     response = handle_mkd(command=command, current_dir=current_dir)
                 elif command.upper().startswith("RMD"):
                     response = handle_rmd(command=command, current_dir=current_dir)
+                elif command.upper().startswith("PWD"):
+                    response = current_dir
                 elif command.upper().startswith("CWD"):
                     curs.execute('INSERT INTO report (username, command) VALUES (?, ?)',
                                     (username, command))
