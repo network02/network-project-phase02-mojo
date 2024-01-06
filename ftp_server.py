@@ -145,7 +145,9 @@ def handle_command(command, current_dir, control_channel):
             return f"Error retrieving directory listing"
     
     elif command.upper().startswith("RETR"):
-        directory = BASE_DIR + command.split(' ')[1]
+        print("Start of RETR command.")
+        directory = manage_dir(command.split(' ')[1], current_dir)
+        print(f"directory: {directory}")
         
         try:
             # Find a random port number for the data channel
@@ -153,12 +155,11 @@ def handle_command(command, current_dir, control_channel):
                 data_port = random.randint(*PORT_RANGE)
                 while DATA_PORTS[data_port] == False:
                     data_port = random.randint(*PORT_RANGE)
-                data_port[data_port] = False    # Close the port
+                DATA_PORTS[data_port] = False    # Close the port
 
             # Send the port number to the client over the control channel
-            file_size = os.path.getsize(file)
-            data_length = str(HEADERSIZE + file_size).encode()
-            control_channel.send(f"PORT {data_port}\r\n{data_length}\r\n".encode())
+            file_size = os.path.getsize(directory)
+            control_channel.send(f"PORT {data_port} {file_size}".encode())
 
             # Create the data socket and listen for the client's connection
             data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -168,39 +169,31 @@ def handle_command(command, current_dir, control_channel):
 
             # Read the entire file into a buffer
             with threading.Lock():
-                with open(file, 'rb') as file:
-                    data = file.read()
+                with open(directory, 'rb') as file:
+                    while True:
+                        data = file.read(1024)
+                        if not data:
+                            break
 
-            # Send the file data chunks to the client
-            sent_bytes = HEADERSIZE
-            while sent_bytes < file_size:
-                # Check if the data is larger than the socket buffer
-                if file_size - sent_bytes < 1024:
-                    # Send the remaining data
-                    data_chunk = data[sent_bytes:]
-                    data_channel.sendall(data_chunk)
-                else:
-                    # Send the data in chunks of 1024 bytes
-                    data_chunk = data[sent_bytes:sent_bytes + 1024]
-                    data_channel.sendall(data_chunk)
-                    sent_bytes += 1024
+                        data_channel.sendall(data)
 
             # Close the data channel
             data_socket.close()
             data_channel.close()
 
             with threading.Lock():
-                data_port[data_port] = True # Open the port
+                DATA_PORTS[data_port] = True # Open the port
 
-            # Send control messages to the client
-            control_channel.send("226 Transfer complete\r\n".encode())
+            response = "226 Transfer complete"
         
         except FileNotFoundError:
-            control_channel.send("450 Requested file action not taken. File unavailable\r\n".encode())
+            response = "450 Requested file action not taken. File unavailable"
 
         except Exception as e:
             print(f"An error occurred: {e}")
-            control_channel.send("451 Requested action aborted. Local error in processing\r\n".encode())
+            response = "451 Requested action aborted. Local error in processing"
+        
+        return response
         
     elif command.upper().startswith("STOR"):
         print(f"start of STOR command: {command}")
@@ -241,6 +234,7 @@ def handle_command(command, current_dir, control_channel):
                 if rcv_size >= file_size:
                     response = '226 Transfer complete'
                     break
+
         print("STOR file recived. closing data_channel.")
         data_socket.close()
         data_channel.close()
