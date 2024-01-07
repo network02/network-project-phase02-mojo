@@ -107,7 +107,7 @@ def validate_command(command):
 
     try:
         # 0 arg
-        if command.upper().split(' ')[0] in ["PWD", "CDUP", "QUIT"]:
+        if command.upper().split(' ')[0] in ["PWD", "CDUP", "QUIT", "REPORT"]:
             if len(command.split(' ')) != 1:
                 return False
         # 1 arg
