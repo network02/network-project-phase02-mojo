@@ -133,9 +133,23 @@ def validate_command(command):
 
 def manage_dir(dir, current_dir):
     if dir.startswith('/'):
-        return BASE_DIR + dir
+        # If the directory path starts with a slash '/', it means it's an absolute path
+        # Add the base directory to the absolute path
+        dir = BASE_DIR + dir
+    else:
+        # If the directory path does not start with a slash '/', it means it's a relative path
+        # Add the current directory to the relative path
+        dir = current_dir + '/' + dir
 
-    return current_dir + '/' + dir
+    # This checks whether the specified directory is within the base directory
+    real_dir = os.path.realpath(dir)
+
+    index = real_dir.find(BASE_DIR)
+    # If the index is not 0, it means the specified directory is not within the base directory
+    if index != 0:
+        return BASE_DIR
+    
+    return real_dir
 
 
 def access(command, user_al):
