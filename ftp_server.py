@@ -241,20 +241,21 @@ def handle_stor(command, control_channel):
         DATA_PORTS[data_port] = False    # Close the port
 
     print(f'data_port:{data_port}')
-    control_channel.send(f"PORT {data_port}".encode())
+    control_channel.send(f"PORT {data_port}".encode(FORMAT))
 
     # Create the data socket and listen for the client's connection
     data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     data_socket.bind(('localhost', data_port))
     data_socket.listen(1)
     data_channel, _ = data_socket.accept()
+
     print("STOR data_channel connected.")
     with open(filename, 'wb') as file: # Open the file or create it
         print("STOR file opened.")
         rcv_size = 0
         print(f'file_size:{file_size}')
         while True:
-            data = data_channel.recv(1024)
+            data = data_channel.recv(SIZE)
 
             file.write(data)
             rcv_size += len(data)
@@ -316,6 +317,14 @@ def handle_rmd(command, current_dir):
         response = '550 Directory does not exist'
 
     return response
+
+
+def handle_pwd(current_dir):
+    dir = current_dir.replace(BASE_DIR, "")
+    if dir:
+        return dir
+    else:
+        return "/"
 
 
 def handle_client(conn, addr):
@@ -392,7 +401,7 @@ def handle_client(conn, addr):
                 elif command.upper().startswith("RMD"):
                     response = handle_rmd(command=command, current_dir=current_dir)
                 elif command.upper().startswith("PWD"):
-                    response = current_dir
+                    response = handle_pwd(current_dir=current_dir)
                 elif command.upper().startswith("CWD"):
                     curs.execute('INSERT INTO report (username, command) VALUES (?, ?)',
                                     (username, command))
@@ -429,7 +438,7 @@ def handle_client(conn, addr):
                     commands = curs.fetchall()
 
                     response = '\n'.join(command[0] for command in commands)
-            
+
                 conn.sendall(response.encode(FORMAT))
             else:
                 response = "550 Permission Denied"
