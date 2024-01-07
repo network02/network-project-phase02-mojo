@@ -7,6 +7,27 @@ ADDR = (IP, PORT)
 FORMAT = "utf-8"
 SIZE = 1024
 
+
+def handle_report(control_channel):
+    control_channel.send("REPORT".encode(FORMAT))
+
+    size = int(control_channel.recv(SIZE).decode())
+    print(f'size: {size}')
+
+    report = ""
+    rcv_size = 0
+    while True:
+        data = control_channel.recv(SIZE).decode()
+
+        report += data
+        rcv_size += len(data)
+        print(rcv_size)
+        if rcv_size >= size:
+            break
+
+    print(report)
+
+
 def main():
     """ Starting a TCP socket. """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
@@ -120,6 +141,11 @@ def main():
                 # Else do nothing
     
                 # End of DELE
+            elif command.upper().startswith("REPORT"):
+                server_response = handle_report(control_channel=client)
+
+                server_response = client.recv(SIZE).decode()
+                print(server_response)
             elif command.upper().startswith("QUIT"):
                 # Send the command to the server
                 client.send(command.encode(FORMAT))

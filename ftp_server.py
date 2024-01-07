@@ -30,7 +30,6 @@ ADDR = (IP, PORT)
 FORMAT = "utf-8"
 SIZE = 1024
 
-
 def command_is(usercommand, command):
     return usercommand.upper().startswith(command)
 
@@ -177,7 +176,8 @@ def handle_list(command, current_dir):
 
         listing_string = "\n".join(listing)
 
-        if listing_string:            
+        if listing_string:   
+            print(len(listing_string))         
             return listing_string
         else:
             return 'Directory is empty.'
@@ -341,6 +341,21 @@ def handle_pwd(current_dir):
         return "/"
 
 
+def handle_report(username, curs, control_channel):
+    curs.execute('SELECT command FROM report WHERE username = ?', (username,))
+    commands = curs.fetchall()
+
+    report = '\n'.join(command[0] for command in commands)
+    size = len(report)
+    print(f'size: {size}')
+
+    control_channel.sendall(f'{size}'.encode(FORMAT))
+
+    control_channel.sendall(report.encode(FORMAT))
+
+    return "200 Sent data successfully"
+
+
 def handle_client(conn, addr):
     current_dir = BASE_DIR
     username = ""
@@ -355,8 +370,8 @@ def handle_client(conn, addr):
     try:
         while True:
             # Receive data from the client
-            command = conn.recv(1024).decode()
-            print(command)
+            command = conn.recv(SIZE).decode()
+            print(f'command: {command}')
 
             if not validate_command(command):
                 response = f"Command '{command}' not supported"
@@ -377,6 +392,7 @@ def handle_client(conn, addr):
                     response = "200 User login successful"
                 else:
                     response = "401 Invalid username"
+
                 conn.sendall(response.encode())
                 continue
             elif command_is(usercommand=command, command="PASS"):
@@ -387,6 +403,7 @@ def handle_client(conn, addr):
                     authenticated = True
                 else:
                     response = "401 Invalid password"
+
                 conn.sendall(response.encode())
                 continue
             elif command_is(usercommand=command, command="QUIT"):
@@ -397,8 +414,7 @@ def handle_client(conn, addr):
 
             if authenticated and access(command.split(' ')[0], access_level):
                 print("authenticated user gonna handle his command")
-                curs.execute('INSERT INTO report (username, command) VALUES (?, ?)',
-                                (username, command))
+                curs.execute('INSERT INTO report (username, command) VALUES (?, ?)', (username, command))
                 db.commit()
 
 
@@ -445,13 +461,7 @@ def handle_client(conn, addr):
                         current_dir = parent_dir
                         response = '250 Directory successfully changed'
                 elif command.upper().startswith("REPORT"):
-                    curs.execute('INSERT INTO report (username, command) VALUES (?, ?)',
-                                    (username, command))
-
-                    curs.execute('SELECT command FROM report WHERE username = ?', (username,))
-                    commands = curs.fetchall()
-
-                    response = '\n'.join(command[0] for command in commands)
+                    response = handle_report(username=username, curs=curs, control_channel=conn)
 
                 conn.sendall(response.encode(FORMAT))
             else:
