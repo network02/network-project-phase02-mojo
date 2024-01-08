@@ -11,19 +11,26 @@ SIZE = 1024
 def handle_report(control_channel):
     control_channel.send("REPORT".encode(FORMAT))
 
-    size = int(control_channel.recv(SIZE).decode())
-    print(f'size: {size}')
+    # Get the port number and size of file from the server
+    # PORT: {port_num}, FILE_SIZE: {file_size}
+    server_response = control_channel.recv(SIZE).decode()
+    data_port = int(server_response.split(' ')[1])
+    file_size = int(server_response.split(' ')[3])
+    print(f'data_port: {data_port}, file_size:{file_size}')
 
-    report = ""
-    rcv_size = 0
-    while True:
-        data = control_channel.recv(SIZE).decode()
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as data_channel:
+        data_channel.connect((IP, data_port))
 
-        report += data
-        rcv_size += len(data)
-        print(rcv_size)
-        if rcv_size >= size:
-            break
+        rcv_size = 0
+
+        while True:
+            data = data_channel.recv(SIZE).decode()
+
+            report += data
+            rcv_size += len(data)
+
+            if rcv_size >= file_size:
+                break
 
     print(report)
 
@@ -142,7 +149,7 @@ def main():
     
                 # End of DELE
             elif command.upper().startswith("REPORT"):
-                server_response = handle_report(control_channel=client)
+                handle_report(control_channel=client)
 
                 server_response = client.recv(SIZE).decode()
                 print(server_response)

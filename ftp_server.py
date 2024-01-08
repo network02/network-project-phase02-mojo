@@ -30,6 +30,7 @@ ADDR = (IP, PORT)
 FORMAT = "utf-8"
 SIZE = 1024
 
+
 def command_is(usercommand, command):
     return usercommand.upper().startswith(command)
 
@@ -161,6 +162,15 @@ def access(command, user_al):
     return True
 
 
+def get_data_port():
+    # Find a random port number for the data channel
+    with threading.Lock():
+        data_port = random.randint(*PORT_RANGE)
+        while DATA_PORTS[data_port] == False:
+            data_port = random.randint(*PORT_RANGE)
+        DATA_PORTS[data_port] = False    # Close the port
+
+
 def handle_list(command, current_dir):
     print(f"Start of LIST command: {command}")
     print(f'current_dir: {current_dir}')
@@ -192,12 +202,8 @@ def handle_retr(command, current_dir, control_channel):
     print(f"directory: {directory}")
     
     try:
-        # Find a random port number for the data channel
-        with threading.Lock():
-            data_port = random.randint(*PORT_RANGE)
-            while DATA_PORTS[data_port] == False:
-                data_port = random.randint(*PORT_RANGE)
-            DATA_PORTS[data_port] = False    # Close the port
+        # Get a port number for the data channel
+        data_port = get_data_port()
 
         # Send the port number to the client over the control channel
         file_size = os.path.getsize(directory)
@@ -346,12 +352,26 @@ def handle_report(username, curs, control_channel):
     commands = curs.fetchall()
 
     report = '\n'.join(command[0] for command in commands)
-    size = len(report)
-    print(f'size: {size}')
+    file_size = len(report)
+    print(f'file_size: {file_size}')
 
-    control_channel.sendall(f'{size}'.encode(FORMAT))
+    data_port = get_data_port()
 
-    control_channel.sendall(report.encode(FORMAT))
+    control_channel.sendall(f'PORT: {port} ,FILE_SIZE: {file_size}'.encode(FORMAT))
+
+    # Create the data socket and listen for the client's connection
+    data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    data_socket.bind((IP, data_port))
+    data_socket.listen(1)
+    data_channel, _ = data_socket.accept()
+
+    data_channel.sendall(report.encode(FORMAT))
+
+    data_socket.close()
+    data_channel.close()
+
+    with threading.Lock():
+        DATA_PORTS[data_port] = True # Open the port
 
     return "200 Sent data successfully"
 
@@ -462,10 +482,11 @@ def handle_client(conn, addr):
                         response = '250 Directory successfully changed'
                 elif command.upper().startswith("REPORT"):
                     response = handle_report(username=username, curs=curs, control_channel=conn)
-
-                conn.sendall(response.encode(FORMAT))
+                    
             else:
                 response = "550 Permission Denied"
+            
+            conn.sendall(response.encode(FORMAT))
 
     except Exception as e:
         print(f"Error handling client {addr}: {e}")
@@ -491,10 +512,6 @@ def main():
     ''')
 
     db.commit()
-    db.close()
-
-    db = sqlite3.connect('ftp_users.db')
-    cursor = db.cursor()
 
     # Create the 'report' table if it doesn't already exist
     cursor.execute('''
