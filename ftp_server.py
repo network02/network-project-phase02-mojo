@@ -251,15 +251,8 @@ def handle_stor(command, control_channel):
     file_size = int(command.split(' ')[2])
 
     response = ""
-
-    # Find a random port number for the data channel
-    with threading.Lock():
-        print("Findig an open data port.")
-        data_port = random.randint(*PORT_RANGE)
-        while DATA_PORTS[data_port] == False:
-            data_port = random.randint(*PORT_RANGE)
-
-        DATA_PORTS[data_port] = False    # Close the port
+        
+    data_port = get_data_port()
 
     print(f'data_port:{data_port}')
     control_channel.send(f"PORT {data_port}".encode(FORMAT))
@@ -287,6 +280,9 @@ def handle_stor(command, control_channel):
                 break
 
     print("STOR file recived. closing data_channel.")
+
+    DATA_PORTS[data_port] = True    # Open the port
+
     data_socket.close()
     data_channel.close()
 
