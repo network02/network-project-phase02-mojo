@@ -22,6 +22,7 @@ def handle_report(control_channel):
         data_channel.connect((IP, data_port))
 
         rcv_size = 0
+        report = ""
 
         while True:
             data = data_channel.recv(SIZE).decode()
