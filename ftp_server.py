@@ -8,6 +8,7 @@ import re
 import random
 import shutil
 import sqlite3
+import datetime
 
 # Define a range of ports for data transfer
 DATA_PORTS = {}
@@ -183,13 +184,22 @@ def handle_list(command, current_dir):
 
     print(f'LIST directory: {directory}')
     try:
-        listing = os.listdir(directory)
+        # listing = os.listdir(directory)
+        listing = ""
 
-        listing_string = "\n".join(listing)
+        for file in os.scandir(directory):
+            if file.is_file():
+                creation_date = file.stat().st_ctime
+                creation_date_datetime = datetime.datetime.fromtimestamp(creation_date)
+                date = creation_date_datetime.strftime("%Y-%m-%d")
+                print(date)
+                listing += file.name + ' ' + str(file.stat().st_size) + ' ' + date + '\n'
+            else:
+                listing += file.name + '\n'
 
-        if listing_string:   
-            print(len(listing_string))         
-            return listing_string
+        if listing:   
+            print(len(listing))         
+            return listing
         else:
             return 'Directory is empty.'
     except OSError as e:
