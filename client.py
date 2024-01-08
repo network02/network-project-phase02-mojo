@@ -75,6 +75,7 @@ def main():
                 _, client_path, server_path = command.split(' ')
 
                 file_size = os.path.getsize(client_path)
+                print(f'filesize: {file_size}')
 
                 # Send the command to the server with the size of file.
                 client.sendall(f'STOR {server_path} {file_size}'.encode(FORMAT))
@@ -98,7 +99,7 @@ def main():
                 print(server_response)
 
                 # End of STOR
-            if command.upper().startswith("RETR"):
+            elif command.upper().startswith("RETR"):
                 # Check if command is valid
                 if len(command.split(' ')) != 2:
                     print("RETR command is not valid.")
