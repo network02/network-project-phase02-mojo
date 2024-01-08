@@ -205,10 +205,16 @@ def handle_retr(command, current_dir, control_channel):
     try:
         # Get a port number for the data channel
         data_port = get_data_port()
+        print(f'data_port: {data_port}')
 
         # Send the port number to the client over the control channel
-        file_size = os.path.getsize(directory)
-        control_channel.send(f"PORT {data_port} {file_size}".encode())
+        if os.path.exists(directory):
+            file_size = os.path.getsize(directory)
+        else:
+            return '550 File not found'
+
+        print(f'file_size: {file_size}')
+        control_channel.send(f"200 PORT {data_port} ,FILE_SIZE: {file_size}".encode())
 
         # Create the data socket and listen for the client's connection
         data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
