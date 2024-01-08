@@ -111,7 +111,7 @@ def validate_command(command):
             if len(command.split(' ')) != 1:
                 return False
         # 1 arg
-        elif command.upper().split(' ')[0] in ["USER", "PASS", "DELE", "RETR", "MKD", "CWD"]:
+        elif command.upper().split(' ')[0] in ["USER", "PASS", "DELE", "RETR", "MKD", "CWD", "RMD"]:
             if len(command.split(' ')) != 2:
                 return False
         # 2 arg
@@ -482,7 +482,7 @@ def handle_client(conn, addr):
                         response = '250 Directory successfully changed'
                 elif command.upper().startswith("REPORT"):
                     response = handle_report(username=username, curs=curs, control_channel=conn)
-                    
+
             else:
                 response = "550 Permission Denied"
             
