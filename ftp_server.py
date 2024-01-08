@@ -8,8 +8,6 @@ import re
 import random
 import shutil
 import sqlite3
-from passlib.hash import bcrypt
-import time
 
 # Define a range of ports for data transfer
 DATA_PORTS = {}
