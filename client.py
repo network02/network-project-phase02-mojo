@@ -140,7 +140,7 @@ def handle_dele(command, control_channel):
 def handle_list(command, control_channel):
     control_channel.send(command.encode(FORMAT))
 
-    file_size = int(control_channel.recv(SIZE).decode().split(' ')[1])
+    file_size = int(control_channel.recv(SIZE).decode().split('n')[0].split(' ')[1])
 
     rcv_size = 0
     listing = ""

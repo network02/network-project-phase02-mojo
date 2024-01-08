@@ -173,6 +173,19 @@ def get_data_port():
     return data_port
 
 
+def pad_string(text, target_length, fill_char='n'):
+   # Calculate the padding length
+   padding_length = target_length - len(text)
+
+   # Create a padding string with the specified fill character
+   padding_string = fill_char * padding_length
+
+   # Concatenate the original string and the padding string
+   result = text + padding_string
+
+   return result
+
+
 def handle_list(command, current_dir, control_channel):
     print(f"Start of LIST command: {command}")
     print(f'current_dir: {current_dir}')
@@ -197,8 +210,9 @@ def handle_list(command, current_dir, control_channel):
             else:
                 listing += file.name + '\n'
 
-        file_size = len(listing)
+        file_size = str(len(listing))
         print(f'file_size: {file_size}')
+        file_size = pad_string(file_size, 1024)
 
         control_channel.sendall(f'FILE_SIZE: {file_size}'.encode())
 
