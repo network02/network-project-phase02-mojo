@@ -137,6 +137,26 @@ def handle_dele(command, control_channel):
     # End of DELE
 
 
+def handle_list(command, control_channel):
+    control_channel.send(command.encode(FORMAT))
+
+    file_size = int(control_channel.recv(SIZE).decode().split(' ')[1])
+
+    rcv_size = 0
+    listing = ""
+
+    while True:
+        data = control_channel.recv(SIZE).decode()
+
+        listing += data
+        rcv_size += len(data)
+
+        if rcv_size >= file_size:
+            break
+
+    print(listing)
+
+
 def main():
     """ Starting a TCP socket. """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
@@ -172,11 +192,12 @@ def main():
                 handle_stor(command=command, control_channel=client)
             elif command.upper().startswith("RETR"):
                 handle_retr(command=command, control_channel=client)
-
             elif command.upper().startswith("DELE"):
                 handle_dele(command=command, control_channel=client)
             elif command.upper().startswith("REPORT"):
                 handle_report(control_channel=client)
+            elif command.upper().startswith("LIST"):
+                handle_list(command=command, control_channel=client)
             elif command.upper().startswith("QUIT"):
                 # Send the command to the server
                 client.send(command.encode(FORMAT))

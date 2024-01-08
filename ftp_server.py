@@ -173,7 +173,7 @@ def get_data_port():
     return data_port
 
 
-def handle_list(command, current_dir):
+def handle_list(command, current_dir, control_channel):
     print(f"Start of LIST command: {command}")
     print(f'current_dir: {current_dir}')
 
@@ -197,8 +197,12 @@ def handle_list(command, current_dir):
             else:
                 listing += file.name + '\n'
 
-        if listing:   
-            print(len(listing))         
+        file_size = len(listing)
+        print(f'file_size: {file_size}')
+
+        control_channel.sendall(f'FILE_SIZE: {file_size}'.encode())
+
+        if listing:  
             return listing
         else:
             return 'Directory is empty.'
@@ -455,7 +459,7 @@ def handle_client(conn, addr):
 
 
                 if command.upper().startswith("LIST"):
-                    response = handle_list(command=command, current_dir=current_dir)
+                    response = handle_list(command=command, current_dir=current_dir, control_channel=conn)
                 elif command.upper().startswith("RETR"):
                     response = handle_retr(command=command, current_dir=current_dir, control_channel=conn)
                 elif command.upper().startswith("STOR"):
