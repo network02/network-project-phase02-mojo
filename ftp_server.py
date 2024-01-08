@@ -9,6 +9,7 @@ import random
 import shutil
 import sqlite3
 from passlib.hash import bcrypt
+import time
 
 # Define a range of ports for data transfer
 DATA_PORTS = {}
@@ -170,6 +171,8 @@ def get_data_port():
             data_port = random.randint(*PORT_RANGE)
         DATA_PORTS[data_port] = False    # Close the port
 
+    return data_port
+
 
 def handle_list(command, current_dir):
     print(f"Start of LIST command: {command}")
@@ -265,7 +268,7 @@ def handle_stor(command, control_channel):
 
     # Create the data socket and listen for the client's connection
     data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    data_socket.bind(('localhost', data_port))
+    data_socket.bind((IP, data_port))
     data_socket.listen(1)
     data_channel, _ = data_socket.accept()
 
@@ -348,6 +351,8 @@ def handle_pwd(current_dir):
 
 
 def handle_report(username, curs, control_channel):
+    print("Start of REPORT command")
+
     curs.execute('SELECT command FROM report WHERE username = ?', (username,))
     commands = curs.fetchall()
 
@@ -356,8 +361,9 @@ def handle_report(username, curs, control_channel):
     print(f'file_size: {file_size}')
 
     data_port = get_data_port()
+    print(f'data_port: {data_port} , tp: {type(data_port)}')
 
-    control_channel.sendall(f'PORT: {port} ,FILE_SIZE: {file_size}'.encode(FORMAT))
+    control_channel.sendall(f'PORT: {data_port} ,FILE_SIZE: {file_size}'.encode(FORMAT))
 
     # Create the data socket and listen for the client's connection
     data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -537,7 +543,7 @@ def main():
         if choice == '1':   # Start the server
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.bind(ADDR)
-                s.listen()
+                s.listen(10)
 
                 print("Server listening on port", PORT)
 
