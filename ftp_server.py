@@ -212,7 +212,9 @@ def handle_list(command, current_dir, control_channel):
 
         file_size = str(len(listing))
         print(f'file_size: {file_size}')
-        file_size = pad_string(file_size, 1024)
+        file_size = pad_string(file_size, 1013)
+
+        print(len(file_size))
 
         control_channel.sendall(f'FILE_SIZE: {file_size}'.encode())
 
@@ -289,7 +291,10 @@ def handle_stor(command, control_channel):
     data_port = get_data_port()
 
     print(f'data_port:{data_port}')
-    control_channel.send(f"PORT {data_port}".encode(FORMAT))
+    if data_port:
+        control_channel.send(f"200 PORT {data_port}".encode(FORMAT))
+    else:
+        control_channel.send(f"401 Port not found.")
 
     # Create the data socket and listen for the client's connection
     data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

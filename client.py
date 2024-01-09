@@ -28,7 +28,13 @@ def handle_stor(command, control_channel):
     control_channel.sendall(f'STOR {server_path} {file_size}'.encode(FORMAT))
 
     # Recieve data port to connect to
-    data_port = int(control_channel.recv(SIZE).decode().split(' ')[1])
+    server_response = control_channel.recv(SIZE).decode().split(' ')
+    if int(server_response[0]) == 200:
+        data_port = int(control_channel.recv(SIZE).decode().split(' ')[2])
+    else:
+        # print(server_response.join(' '))
+        print(' '.join(server_response))
+        return
     print(f'data port: {data_port}')
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as data_channel:
