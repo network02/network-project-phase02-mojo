@@ -29,10 +29,9 @@ def handle_stor(command, control_channel):
 
     # Recieve data port to connect to
     server_response = control_channel.recv(SIZE).decode().split(' ')
-    if int(server_response[0]) == 200:
-        data_port = int(control_channel.recv(SIZE).decode().split(' ')[2])
+    if server_response[0] == '200':
+        data_port = int(server_response[2])
     else:
-        # print(server_response.join(' '))
         print(' '.join(server_response))
         return
     print(f'data port: {data_port}')

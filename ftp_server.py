@@ -281,9 +281,10 @@ def handle_retr(command, current_dir, control_channel):
     return response
 
 
-def handle_stor(command, control_channel):
+def handle_stor(command, control_channel, current_dir):
     print(f"start of STOR command: {command}")
-    filename = BASE_DIR + str(command.split(' ')[1])
+    # filename = BASE_DIR + str(command.split(' ')[1])
+    filename = manage_dir(dir=command.split(' ')[1], current_dir=current_dir)
     file_size = int(command.split(' ')[2])
 
     response = ""
@@ -294,9 +295,10 @@ def handle_stor(command, control_channel):
 
     print(f'data_port:{data_port}')
     if data_port and os.path.exists(directory):
+        print("mamad")
         control_channel.send(f"200 PORT {data_port}".encode(FORMAT))
     else:
-        control_channel.send(f"401 not found.".encode(FORMAT))
+        return "401 not found."
 
     # Create the data socket and listen for the client's connection
     data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -484,7 +486,7 @@ def handle_client(conn, addr):
                 elif command.upper().startswith("RETR"):
                     response = handle_retr(command=command, current_dir=current_dir, control_channel=conn)
                 elif command.upper().startswith("STOR"):
-                    response = handle_stor(command=command, control_channel=conn)
+                    response = handle_stor(command=command, control_channel=conn, current_dir=current_dir)
                 elif command.upper().startswith("DELE"):
                     response = handle_dele(command=command, current_dir=current_dir)
                 elif command.upper().startswith("MKD"):
