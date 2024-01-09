@@ -289,12 +289,14 @@ def handle_stor(command, control_channel):
     response = ""
         
     data_port = get_data_port()
+    directory = os.path.dirname(filename)
+    print(f'directory: {directory}')
 
     print(f'data_port:{data_port}')
-    if data_port:
+    if data_port and os.path.exists(directory):
         control_channel.send(f"200 PORT {data_port}".encode(FORMAT))
     else:
-        control_channel.send(f"401 Port not found.")
+        control_channel.send(f"401 not found.".encode(FORMAT))
 
     # Create the data socket and listen for the client's connection
     data_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
