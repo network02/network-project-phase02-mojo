@@ -281,22 +281,28 @@ def handle_retr(command, current_dir, control_channel):
     return response
 
 
-def handle_stor(command, control_channel, current_dir):
+def handle_stor(command, control_channel, current_dir, access_level):
     print(f"start of STOR command: {command}")
-    # filename = BASE_DIR + str(command.split(' ')[1])
     filename = manage_dir(dir=command.split(' ')[1], current_dir=current_dir)
     file_size = int(command.split(' ')[2])
 
     response = ""
-        
+
+    access = True
+    print(f'a_l: {access_level}')
+    if os.path.exists(filename) and access_level > 1:
+        access = False
+
     data_port = get_data_port()
     directory = os.path.dirname(filename)
     print(f'directory: {directory}')
 
     print(f'data_port:{data_port}')
-    if data_port and os.path.exists(directory):
+    if data_port and os.path.exists(directory) and access:
         print("mamad")
         control_channel.send(f"200 PORT {data_port}".encode(FORMAT))
+    elif not access:
+        return "501 Permission denied."
     else:
         return "401 not found."
 
@@ -486,7 +492,7 @@ def handle_client(conn, addr):
                 elif command.upper().startswith("RETR"):
                     response = handle_retr(command=command, current_dir=current_dir, control_channel=conn)
                 elif command.upper().startswith("STOR"):
-                    response = handle_stor(command=command, control_channel=conn, current_dir=current_dir)
+                    response = handle_stor(command=command, control_channel=conn, current_dir=current_dir, access_level=access_level)
                 elif command.upper().startswith("DELE"):
                     response = handle_dele(command=command, current_dir=current_dir)
                 elif command.upper().startswith("MKD"):
