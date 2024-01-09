@@ -128,7 +128,7 @@ def handle_report(control_channel):
     print(server_response)
 
 
-def handle_dele(command, control_channel):
+def handle_dele_rmd(command, control_channel):
     # Check if the user is sure
     choice = input("Do you really wish to delete y/n? ")
     if choice == 'y' or choice == 'Y':
@@ -139,7 +139,6 @@ def handle_dele(command, control_channel):
         print(server_response)
     # Else do nothing
 
-    # End of DELE
 
 
 def handle_list(command, control_channel):
@@ -197,8 +196,8 @@ def main():
                 handle_stor(command=command, control_channel=client)
             elif command.upper().startswith("RETR"):
                 handle_retr(command=command, control_channel=client)
-            elif command.upper().startswith("DELE"):
-                handle_dele(command=command, control_channel=client)
+            elif command.upper().startswith("DELE") or command.upper().startswith("RMD"):
+                handle_dele_rmd(command=command, control_channel=client)
             elif command.upper().startswith("REPORT"):
                 handle_report(control_channel=client)
             elif command.upper().startswith("LIST"):
